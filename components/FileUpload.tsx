@@ -169,20 +169,11 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, onTextSubmit }) =
       
       <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
         <h4 className="text-sm font-semibold text-gray-900 mb-3">使い方</h4>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-gray-600">
-          <div className="text-center">
-            <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mx-auto mb-1 font-bold text-xs">1</div>
-            <p>テープ起こしファイルを<br />アップロード</p>
-          </div>
-          <div className="text-center">
-            <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mx-auto mb-1 font-bold text-xs">2</div>
-            <p>AIがタイトルと文字数を<br />提案</p>
-          </div>
-          <div className="text-center">
-            <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mx-auto mb-1 font-bold text-xs">3</div>
-            <p>MDファイルで保存または<br />noteエディタに貼り付け</p>
-          </div>
-        </div>
+        <ul className="text-xs text-gray-600 space-y-1">
+          <li>• ファイルをアップロード</li>
+          <li>• AIが提案を生成</li>
+          <li>• 記事を保存・コピー</li>
+        </ul>
       </div>
 
       {/* 差別化ポイントのSVG */}
