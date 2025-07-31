@@ -179,6 +179,21 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, onTextSubmit }) =
           </div>
         </div>
       </div>
+
+      {/* 差別化ポイントのSVG */}
+      <div className="mt-4 flex justify-center">
+        <svg width="200" height="40" viewBox="0 0 200 40" className="opacity-60">
+          <defs>
+            <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style={{stopColor:'#3B82F6',stopOpacity:0.3}} />
+              <stop offset="100%" style={{stopColor:'#10B981',stopOpacity:0.3}} />
+            </linearGradient>
+          </defs>
+          <rect width="200" height="40" fill="url(#grad1)" rx="8" ry="8"/>
+          <text x="100" y="15" textAnchor="middle" className="text-xs fill-gray-600 font-medium">あなたの言葉をそのまま活かす</text>
+          <text x="100" y="28" textAnchor="middle" className="text-xs fill-gray-600 font-medium">オリジナル性重視の記事生成</text>
+        </svg>
+      </div>
     </div>
   );
 };

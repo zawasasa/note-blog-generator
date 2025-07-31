@@ -183,13 +183,6 @@ const App: React.FC = () => {
                             🔄 やり直す
                         </button>
                     )}
-                    <div className="text-right">
-                        <p className="text-xs text-gray-500 leading-tight max-w-48">
-                            あなたの言葉をそのまま活かす<br />
-                            他のAIアプリとは一線を画す<br />
-                            オリジナル性重視の記事生成
-                        </p>
-                    </div>
                 </div>
             </header>
             <main className="w-full max-w-4xl flex-grow flex items-center justify-center">
