@@ -3,11 +3,13 @@ import { GoogleGenAI, Type, Chat, GenerateContentResponse } from "@google/genai"
 import { ArticleSection, LengthSuggestion } from '../types';
 import { SYSTEM_PROMPT } from '../constants';
 
-if (!import.meta.env.VITE_API_KEY) {
-    throw new Error("VITE_API_KEY environment variable is not set");
+// 環境変数のチェックを一時的に無効化（開発用）
+const apiKey = import.meta.env.VITE_API_KEY || import.meta.env.GEMINI_API_KEY || 'dummy_key_for_development';
+if (!apiKey || apiKey === 'dummy_key_for_development') {
+    console.warn("API key is not set. Some features may not work properly.");
 }
 
-const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_API_KEY });
+const ai = new GoogleGenAI({ apiKey });
 let chat: Chat | null = null;
 
 const titleSuggestionSchema = {
@@ -43,6 +45,26 @@ const lengthSuggestionSchema = {
 };
 
 export async function getInitialSuggestions(transcript: string): Promise<{ titles: string[], lengthSuggestions: LengthSuggestion[] }> {
+    // APIキーが無効な場合のモックデータ
+    const apiKey = import.meta.env.VITE_API_KEY || import.meta.env.GEMINI_API_KEY;
+    if (!apiKey || apiKey === 'dummy_key_for_development') {
+        console.warn("Using mock data due to missing API key");
+        return {
+            titles: [
+                "テープ起こしからnote記事を書いた話",
+                "AIを使ってブログ記事を生成した話", 
+                "音声をテキストに変換して記事にした話",
+                "自動でnote記事を作成した話",
+                "テープ起こしを活用して記事を書いた話"
+            ],
+            lengthSuggestions: [
+                { length: 1500, description: "1500字程度", reason: "コンパクトに要点をまとめる" },
+                { length: 2000, description: "2000字程度", reason: "標準的な長さ" },
+                { length: 3000, description: "3000字程度", reason: "詳細に展開" },
+                { length: 5000, description: "5000字程度", reason: "ボリューミーに展開" }
+            ]
+        };
+    }
     const prompt = `あなたはプロのブログライターです。テープ起こしを提供しますので、それを分析してブログ記事の構成を提案してください。
 
 1. テープ起こしを注意深く読み、主要なテーマと内容の豊富さを理解してください。
@@ -103,6 +125,37 @@ function initializeChat() {
 }
 
 export async function* continueChatStream(message: string): AsyncGenerator<string, void, undefined> {
+    // APIキーが無効な場合のモックデータ
+    const apiKey = import.meta.env.VITE_API_KEY || import.meta.env.GEMINI_API_KEY;
+    if (!apiKey || apiKey === 'dummy_key_for_development') {
+        console.warn("Using mock article due to missing API key");
+        const mockArticle = `# テープ起こしからnote記事を書いた話
+
+これはAPIキーが設定されていない場合のモック記事です。実際に使用するには、有効なGemini APIキーを設定してください。
+
+## はじめに
+
+テープ起こしからnote記事を自動生成するアプリケーションについて説明します。
+
+## 主な機能
+
+- テキストファイルのアップロード
+- AIによる記事タイトルの提案
+- 文字数の選択
+- 自動記事生成
+
+## まとめ
+
+このアプリケーションを使えば、誰でも簡単にnote記事を作成できます。`;
+
+        for (const char of mockArticle) {
+            yield char;
+            // リアルタイム感を出すために少し待機
+            await new Promise(resolve => setTimeout(resolve, 10));
+        }
+        return;
+    }
+
     if (!chat) {
         initializeChat();
     }
