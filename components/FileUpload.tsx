@@ -91,8 +91,13 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, onTextSubmit }) =
     <div className="w-full max-w-2xl mx-auto text-center">
       <div className="mb-6">
         <h3 className="text-xl font-semibold text-gray-900 mb-2">テープ起こしファイルをアップロード</h3>
-        <p className="text-gray-600">あなたが話した内容のテキストファイルを読み込ませて</p>
-        <p className="text-gray-600">AIが自動でnote記事を書いてくれます</p>
+        <p className="text-xs text-gray-500">あなたが話した内容のテキストファイルを読み込ませて</p>
+        <p className="text-xs text-gray-500">AIが自動でnote記事を書いてくれます</p>
+      </div>
+      
+      {/* 区切り線 */}
+      <div className="mb-6">
+        <hr className="border-gray-200" />
       </div>
       
       {/* 入力方法の選択 */}
