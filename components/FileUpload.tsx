@@ -31,19 +31,53 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, onTextSubmit }) =
     setIsDragging(false);
   }, []);
 
+  const validateFile = (file: File): boolean => {
+    const allowedTypes = ['text/plain', 'text/markdown'];
+    const allowedExtensions = ['.txt', '.md'];
+    
+    // ファイルタイプをチェック
+    if (allowedTypes.includes(file.type)) {
+      return true;
+    }
+    
+    // 拡張子をチェック
+    const fileName = file.name.toLowerCase();
+    return allowedExtensions.some(ext => fileName.endsWith(ext));
+  };
+
+  const handleFileValidation = (file: File) => {
+    if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+      alert('PDFファイルは対応していません。テキストファイル（.txt）またはマークダウンファイル（.md）をご利用ください。');
+      return false;
+    }
+    
+    if (!validateFile(file)) {
+      alert('対応していないファイル形式です。テキストファイル（.txt）またはマークダウンファイル（.md）をご利用ください。');
+      return false;
+    }
+    
+    return true;
+  };
+
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      onFileSelect(e.dataTransfer.files[0]);
+      const file = e.dataTransfer.files[0];
+      if (handleFileValidation(file)) {
+        onFileSelect(file);
+      }
       e.dataTransfer.clearData();
     }
   }, [onFileSelect]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      onFileSelect(e.target.files[0]);
+      const file = e.target.files[0];
+      if (handleFileValidation(file)) {
+        onFileSelect(file);
+      }
     }
   };
 
@@ -102,9 +136,10 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, onTextSubmit }) =
             <p className="mb-2 text-sm text-gray-600">
               <span className="font-semibold text-blue-600">クリックしてアップロード</span> またはドラッグ＆ドロップ
             </p>
-            <p className="text-xs text-gray-500">TXT, MD, または PDFファイル</p>
+            <p className="text-xs text-gray-500">TXT または MDファイルのみ</p>
+            <p className="text-xs text-red-500 mt-1">※ PDFファイルは対応していません</p>
           </div>
-          <input id="dropzone-file" type="file" className="hidden" onChange={handleChange} accept=".txt,.md,.pdf" />
+          <input id="dropzone-file" type="file" className="hidden" onChange={handleChange} accept=".txt,.md" />
         </label>
       )}
 
