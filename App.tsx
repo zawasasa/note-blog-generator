@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useMemo } from 'react';
 import { AppState, LengthSuggestion } from './types';
 import { getInitialSuggestions, continueChatStream } from './services/geminiService';
 import FileUpload from './components/FileUpload';
@@ -24,31 +24,12 @@ const App: React.FC = () => {
 
     const fullArticleRef = useRef<string>("");
 
-    const handleFileSelect = async (file: File) => {
-        setError(null);
-        setAppState(AppState.PROCESSING_FILE);
-        try {
-            const fileText = await file.text();
-            setTranscript(fileText);
-
-            const suggestions = await getInitialSuggestions(fileText);
-            setTitles(suggestions.titles);
-            setLengthSuggestions(suggestions.lengthSuggestions);
-            setAppState(AppState.AWAITING_TITLE_APPROVAL);
-        } catch (e) {
-            console.error(e);
-            const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred.';
-            setError(`AIから提案を取得できませんでした: ${errorMessage}`);
-            setAppState(AppState.IDLE);
-        }
-    };
-
-    const handleTextSubmit = async (text: string) => {
+    // 共通の処理を関数として抽出
+    const processTranscript = async (text: string) => {
         setError(null);
         setAppState(AppState.PROCESSING_FILE);
         try {
             setTranscript(text);
-
             const suggestions = await getInitialSuggestions(text);
             setTitles(suggestions.titles);
             setLengthSuggestions(suggestions.lengthSuggestions);
@@ -61,15 +42,24 @@ const App: React.FC = () => {
         }
     };
 
-    const handleTitleSelect = (title: string) => {
+    const handleFileSelect = useCallback(async (file: File) => {
+        const fileText = await file.text();
+        await processTranscript(fileText);
+    }, []);
+
+    const handleTextSubmit = useCallback(async (text: string) => {
+        await processTranscript(text);
+    }, []);
+
+    const handleTitleSelect = useCallback((title: string) => {
         setSelectedTitle(title);
         setAppState(AppState.AWAITING_LENGTH_SELECTION);
-    };
+    }, []);
 
-    const handleLengthSelect = (length: number) => {
+    const handleLengthSelect = useCallback((length: number) => {
         setSelectedLength(length);
         setAppState(AppState.AWAITING_REFERENCE_URL);
-    };
+    }, []);
 
     const startArticleGeneration = useCallback(async () => {
         if (!selectedTitle || !selectedLength || !transcript) return;
@@ -86,8 +76,13 @@ const App: React.FC = () => {
         try {
             for await (const chunk of continueChatStream(fullPrompt)) {
                 fullArticleRef.current += chunk;
-                setBlogPost(fullArticleRef.current);
+                // パフォーマンス最適化: 一定間隔でのみ更新
+                if (fullArticleRef.current.length % 50 === 0) {
+                    setBlogPost(fullArticleRef.current);
+                }
             }
+            // 最終更新
+            setBlogPost(fullArticleRef.current);
             setAppState(AppState.COMPLETED);
         } catch (e) {
             console.error(e);
@@ -96,7 +91,7 @@ const App: React.FC = () => {
         }
     }, [selectedTitle, selectedLength, transcript, referenceUrl]);
     
-    const resetApp = () => {
+    const resetApp = useCallback(() => {
         setAppState(AppState.IDLE);
         setError(null);
         setTranscript('');
@@ -107,14 +102,15 @@ const App: React.FC = () => {
         setReferenceUrl('');
         setBlogPost('');
         fullArticleRef.current = "";
-    };
+    }, []);
 
-    const renderContent = () => {
-        const showArticlePreviewStates = [
-            AppState.GENERATING_ARTICLE,
-            AppState.COMPLETED
-        ];
+    // パフォーマンス最適化: 配列をメモ化
+    const showArticlePreviewStates = useMemo(() => [
+        AppState.GENERATING_ARTICLE,
+        AppState.COMPLETED
+    ], []);
 
+    const renderContent = useCallback(() => {
         if (showArticlePreviewStates.includes(appState)) {
             return <ArticlePreview
                 title={selectedTitle}
@@ -166,7 +162,7 @@ const App: React.FC = () => {
             default:
                 return <p>未処理の状態です。</p>;
         }
-    };
+    }, [appState, showArticlePreviewStates, selectedTitle, blogPost, titles, lengthSuggestions, referenceUrl, handleFileSelect, handleTextSubmit, handleTitleSelect, handleLengthSelect, resetApp, startArticleGeneration]);
 
     return (
         <div className="min-h-screen bg-white text-gray-800 flex flex-col items-center p-4 sm:p-8">

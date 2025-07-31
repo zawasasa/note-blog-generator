@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { AppState } from '../types';
@@ -16,7 +16,7 @@ const ArticlePreview: React.FC<ArticlePreviewProps> = ({ title, blogPost, appSta
   const [isCopying, setIsCopying] = useState(false);
   const [showCopySuccess, setShowCopySuccess] = useState(false);
 
-  const handleDownloadMarkdown = async () => {
+  const handleDownloadMarkdown = useCallback(async () => {
     setIsDownloading(true);
     try {
       const markdownContent = `# ${title}\n\n${blogPost}`;
@@ -35,9 +35,9 @@ const ArticlePreview: React.FC<ArticlePreviewProps> = ({ title, blogPost, appSta
     } finally {
       setIsDownloading(false);
     }
-  };
+  }, [title, blogPost]);
 
-  const handleCopyToClipboard = async () => {
+  const handleCopyToClipboard = useCallback(async () => {
     setIsCopying(true);
     try {
       const markdownContent = `# ${title}\n\n${blogPost}`;
@@ -50,9 +50,73 @@ const ArticlePreview: React.FC<ArticlePreviewProps> = ({ title, blogPost, appSta
     } finally {
       setIsCopying(false);
     }
-  };
+  }, [title, blogPost]);
 
-  const renderActionPanel = () => {
+  // メモ化されたReactMarkdownコンポーネント
+  const markdownComponents = useMemo(() => ({
+    // コードブロックのスタイリング
+    code: ({ node, inline, className, children, ...props }: any) => {
+      const match = /language-(\w+)/.exec(className || '');
+      return !inline ? (
+        <pre className="bg-gray-50 border border-gray-200 rounded-lg p-3 overflow-x-auto">
+          <code className={className} {...props}>
+            {children}
+          </code>
+        </pre>
+      ) : (
+        <code className="bg-gray-100 px-1.5 py-0.5 rounded text-blue-600 font-mono text-xs" {...props}>
+          {children}
+        </code>
+      );
+    },
+    // 引用ブロックのスタイリング
+    blockquote: ({ children }: any) => (
+      <blockquote className="border-l-4 border-blue-500 pl-3 italic text-gray-600 bg-blue-50 py-2 rounded-r">
+        {children}
+      </blockquote>
+    ),
+    // 見出しのスタイリング
+    h1: ({ children }: any) => (
+      <h1 className="text-2xl font-bold text-gray-900 mb-3 mt-6 first:mt-0">
+        {children}
+      </h1>
+    ),
+    h2: ({ children }: any) => (
+      <h2 className="text-xl font-bold text-gray-900 mb-2 mt-4">
+        {children}
+      </h2>
+    ),
+    h3: ({ children }: any) => (
+      <h3 className="text-lg font-bold text-gray-900 mb-2 mt-3">
+        {children}
+      </h3>
+    ),
+    // 段落のスタイリング（空行を適切に処理）
+    p: ({ children }: any) => (
+      <p className="text-gray-700 leading-relaxed mb-3 last:mb-0">
+        {children}
+      </p>
+    ),
+    // リストのスタイリング
+    ul: ({ children }: any) => (
+      <ul className="list-disc list-inside text-gray-700 mb-3 space-y-1">
+        {children}
+      </ul>
+    ),
+    ol: ({ children }: any) => (
+      <ol className="list-decimal list-inside text-gray-700 mb-3 space-y-1">
+        {children}
+      </ol>
+    ),
+    // リンクのスタイリング
+    a: ({ href, children }: any) => (
+      <a href={href} className="text-blue-600 hover:text-blue-800 underline" target="_blank" rel="noopener noreferrer">
+        {children}
+      </a>
+    ),
+  }), []);
+
+  const renderActionPanel = useCallback(() => {
     switch (appState) {
         case AppState.GENERATING_ARTICLE:
             return <div className="mt-6"><Loader text="記事全体を生成しています... しばらくお待ちください。" /></div>;
@@ -96,7 +160,7 @@ const ArticlePreview: React.FC<ArticlePreviewProps> = ({ title, blogPost, appSta
         default:
             return null;
     }
-  }
+  }, [appState, handleDownloadMarkdown, handleCopyToClipboard, isDownloading, isCopying, showCopySuccess]);
 
   return (
     <div className="w-full max-w-3xl mx-auto">
@@ -105,68 +169,7 @@ const ArticlePreview: React.FC<ArticlePreviewProps> = ({ title, blogPost, appSta
         <div className="prose prose-sm max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-strong:text-gray-900 prose-blockquote:border-l-blue-500 prose-blockquote:text-gray-600 prose-code:text-blue-600 prose-pre:bg-gray-50 prose-pre:border prose-pre:border-gray-200">
           <ReactMarkdown 
             remarkPlugins={[remarkGfm]}
-            components={{
-              // コードブロックのスタイリング
-              code: ({ node, inline, className, children, ...props }) => {
-                const match = /language-(\w+)/.exec(className || '');
-                return !inline ? (
-                  <pre className="bg-gray-50 border border-gray-200 rounded-lg p-3 overflow-x-auto">
-                    <code className={className} {...props}>
-                      {children}
-                    </code>
-                  </pre>
-                ) : (
-                  <code className="bg-gray-100 px-1.5 py-0.5 rounded text-blue-600 font-mono text-xs" {...props}>
-                    {children}
-                  </code>
-                );
-              },
-              // 引用ブロックのスタイリング
-              blockquote: ({ children }) => (
-                <blockquote className="border-l-4 border-blue-500 pl-3 italic text-gray-600 bg-blue-50 py-2 rounded-r">
-                  {children}
-                </blockquote>
-              ),
-              // 見出しのスタイリング
-              h1: ({ children }) => (
-                <h1 className="text-2xl font-bold text-gray-900 mb-3 mt-6 first:mt-0">
-                  {children}
-                </h1>
-              ),
-              h2: ({ children }) => (
-                <h2 className="text-xl font-bold text-gray-900 mb-2 mt-4">
-                  {children}
-                </h2>
-              ),
-              h3: ({ children }) => (
-                <h3 className="text-lg font-bold text-gray-900 mb-2 mt-3">
-                  {children}
-                </h3>
-              ),
-              // 段落のスタイリング（空行を適切に処理）
-              p: ({ children }) => (
-                <p className="text-gray-700 leading-relaxed mb-3 last:mb-0">
-                  {children}
-                </p>
-              ),
-              // リストのスタイリング
-              ul: ({ children }) => (
-                <ul className="list-disc list-inside text-gray-700 mb-3 space-y-1">
-                  {children}
-                </ul>
-              ),
-              ol: ({ children }) => (
-                <ol className="list-decimal list-inside text-gray-700 mb-3 space-y-1">
-                  {children}
-                </ol>
-              ),
-              // リンクのスタイリング
-              a: ({ href, children }) => (
-                <a href={href} className="text-blue-600 hover:text-blue-800 underline" target="_blank" rel="noopener noreferrer">
-                  {children}
-                </a>
-              ),
-            }}
+            components={markdownComponents}
           >
             {blogPost}
           </ReactMarkdown>
